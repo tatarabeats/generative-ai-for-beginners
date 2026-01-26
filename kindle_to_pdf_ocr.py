@@ -31,8 +31,8 @@ class KindleCapture:
         self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         # 設定
-        self.page_turn_wait = 1.5
-        self.initial_wait = 3.0
+        self.page_turn_wait = 0.8  # ページ送り後の待機（短縮）
+        self.initial_wait = 2.0   # 開始時の待機
 
     def setup_output_dir(self):
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -90,18 +90,9 @@ class KindleCapture:
         return hashlib.md5(np.array(small).tobytes()).hexdigest()
 
     def turn_page(self):
-        before_hash = self.compute_hash(self.take_screenshot())
-
-        for attempt in range(3):
-            self.activate_window()
-            pyautogui.press('left')
-            time.sleep(self.page_turn_wait)
-
-            after_hash = self.compute_hash(self.take_screenshot())
-            if before_hash != after_hash:
-                return True
-
-        return False
+        pyautogui.press('left')
+        time.sleep(self.page_turn_wait)
+        return True
 
     def capture_pages(self, page_count):
         self.setup_output_dir()
@@ -112,9 +103,9 @@ class KindleCapture:
         print(f"\n{'='*50}")
         print(f"最大 {page_count} ページをキャプチャします")
         print(f"{'='*50}")
-        print("5秒後に開始... Kindleを前面にしてください！")
+        print("3秒後に開始... Kindleを前面にしてください！")
 
-        for i in range(5, 0, -1):
+        for i in range(3, 0, -1):
             print(f"  {i}...", end="\r")
             time.sleep(1)
         print("  開始！")
@@ -123,9 +114,6 @@ class KindleCapture:
         time.sleep(self.initial_wait)
 
         for page_num in range(1, page_count + 1):
-            self.activate_window()
-            time.sleep(0.3)
-
             screenshot = self.take_screenshot()
             current_hash = self.compute_hash(screenshot)
 
