@@ -52,7 +52,7 @@ class Config:
     initial_wait: float = 2.0  # 最初のページ読み込み待機時間
     page_turn_retry: int = 3  # ページ送りのリトライ回数
     page_turn_key: str = "left"  # ページ送りキー（"left" or "right"）
-    use_click_to_turn: bool = True  # クリックでページ送りも試す
+    use_click_to_turn: bool = False  # クリックでページ送りも試す（Kindleでは無効推奨）
 
     # 最後のページ検出
     auto_stop_on_last_page: bool = True  # 最後のページで自動停止
