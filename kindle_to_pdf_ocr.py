@@ -180,7 +180,7 @@ class KindleCapture:
         return (left, top + top_margin, width, height - top_margin - bottom_margin)
 
     def activate_window(self):
-        """ウィンドウをアクティブ化"""
+        """ウィンドウをアクティブ化（クリックなし）"""
         if not self.window:
             return
 
@@ -202,13 +202,6 @@ class KindleCapture:
             pass
 
         time.sleep(self.config.activation_wait)
-
-        # コンテンツ領域の中央をクリック
-        left, top, width, height = self.get_content_region()
-        center_x = left + width // 2
-        center_y = top + height // 2
-        pyautogui.click(center_x, center_y)
-        time.sleep(0.2)
 
     def take_screenshot(self) -> Image.Image:
         """スクリーンショットを取得"""
