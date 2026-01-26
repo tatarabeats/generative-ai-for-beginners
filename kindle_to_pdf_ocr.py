@@ -51,7 +51,7 @@ class Config:
     activation_wait: float = 0.5  # ウィンドウアクティブ化後の待機時間
     initial_wait: float = 2.0  # 最初のページ読み込み待機時間
     page_turn_retry: int = 3  # ページ送りのリトライ回数
-    page_turn_key: str = "right"  # ページ送りキー（"left" or "right"）
+    page_turn_key: str = "left"  # ページ送りキー（"left" or "right"）
     use_click_to_turn: bool = True  # クリックでページ送りも試す
 
     # 最後のページ検出
@@ -279,11 +279,11 @@ class KindleCapture:
             pyautogui.press(self.config.page_turn_key)
             time.sleep(0.5)
 
-            # 方法2: クリックでもページ送りを試す（右側をクリック）
+            # 方法2: クリックでもページ送りを試す（左側をクリック）
             if self.config.use_click_to_turn:
                 left, top, width, height = self.get_content_region()
-                # 右側3分の1の位置をクリック（次のページへ）
-                click_x = left + int(width * 0.85)
+                # 左側をクリック（次のページへ進む）
+                click_x = left + int(width * 0.15)
                 click_y = top + height // 2
                 pyautogui.click(click_x, click_y)
                 time.sleep(0.3)
