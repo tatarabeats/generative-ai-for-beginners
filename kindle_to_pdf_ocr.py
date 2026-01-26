@@ -47,10 +47,12 @@ except ImportError:
 class Config:
     """設定クラス"""
     # ページ送り関連
-    page_turn_wait: float = 1.0  # ページ送り後の待機時間（長めに設定）
+    page_turn_wait: float = 1.5  # ページ送り後の待機時間（長めに設定）
     activation_wait: float = 0.5  # ウィンドウアクティブ化後の待機時間
     initial_wait: float = 2.0  # 最初のページ読み込み待機時間
-    page_turn_retry: int = 5  # ページ送りのリトライ回数
+    page_turn_retry: int = 3  # ページ送りのリトライ回数
+    page_turn_key: str = "right"  # ページ送りキー（"left" or "right"）
+    use_click_to_turn: bool = True  # クリックでページ送りも試す
 
     # 最後のページ検出
     auto_stop_on_last_page: bool = True  # 最後のページで自動停止
@@ -72,9 +74,10 @@ class Config:
     save_intermediate: bool = True  # 中間ファイルを保存するか
     pdf_resolution: float = 150.0  # PDF解像度
 
-    # 重複検出（厳密に）
-    similarity_threshold: float = 0.90  # 画像類似度の閾値（高めに設定）
+    # 重複検出（緩めに設定）
+    similarity_threshold: float = 0.98  # 画像類似度の閾値（ほぼ同一の場合のみ重複判定）
     use_hash_comparison: bool = True  # ハッシュ比較も使用
+    skip_duplicate_check: bool = False  # 重複チェックをスキップ（デバッグ用）
 
     def __post_init__(self):
         if self.ocr_languages is None:
@@ -244,18 +247,17 @@ class KindleCapture:
 
     def is_duplicate_page(self, image: Image.Image) -> bool:
         """既にキャプチャ済みのページかチェック"""
+        # 重複チェックをスキップする設定の場合
+        if self.config.skip_duplicate_check:
+            return False
+
         if not self.images:
             return False
 
         current_hash = self.compute_image_hash(image)
 
-        # 直近5ページと比較
-        for prev_hash in self.image_hashes[-5:]:
-            if current_hash == prev_hash:
-                return True
-
-        # 最後のページと詳細比較
-        if self.images_are_similar(self.images[-1], image):
+        # 直前のページとのみハッシュ比較（厳密に同一の場合のみ）
+        if self.image_hashes and current_hash == self.image_hashes[-1]:
             return True
 
         return False
@@ -271,13 +273,23 @@ class KindleCapture:
         for attempt in range(self.config.page_turn_retry):
             # ウィンドウを確実にアクティブ化
             self.activate_window()
-            time.sleep(0.2)
+            time.sleep(0.3)
 
-            # 左矢印キーでページ送り
-            pyautogui.press('left')
+            # 方法1: キーボードでページ送り
+            pyautogui.press(self.config.page_turn_key)
+            time.sleep(0.5)
 
-            # ページ読み込み待機（徐々に長くする）
-            wait_time = self.config.page_turn_wait + (attempt * 0.3)
+            # 方法2: クリックでもページ送りを試す（右側をクリック）
+            if self.config.use_click_to_turn:
+                left, top, width, height = self.get_content_region()
+                # 右側3分の1の位置をクリック（次のページへ）
+                click_x = left + int(width * 0.85)
+                click_y = top + height // 2
+                pyautogui.click(click_x, click_y)
+                time.sleep(0.3)
+
+            # ページ読み込み待機
+            wait_time = self.config.page_turn_wait + (attempt * 0.5)
             time.sleep(wait_time)
 
             # 新しいスクリーンショットを取得
@@ -286,9 +298,11 @@ class KindleCapture:
 
             # ハッシュが異なる = ページが変わった
             if before_hash != after_hash:
-                # さらにピクセル比較で確認
-                if not self.images_are_similar(before_screenshot, after_screenshot):
-                    return (True, after_screenshot)
+                return (True, after_screenshot)
+
+            # ピクセル比較でも確認
+            if not self.images_are_similar(before_screenshot, after_screenshot):
+                return (True, after_screenshot)
 
             print(f"    リトライ {attempt + 1}/{self.config.page_turn_retry}...", end="\r")
 
