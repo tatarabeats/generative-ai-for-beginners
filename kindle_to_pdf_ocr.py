@@ -4,6 +4,7 @@ Kindleアプリのページを全てスクリーンショットしてPDFに変�
 
 import time
 import sys
+import re
 from PIL import Image
 import pyautogui
 import pygetwindow as gw
@@ -53,6 +54,19 @@ class KindleCapture:
                 continue
         print("[エラー] Kindleウィンドウが見つかりません")
         return None
+
+    def get_book_name(self):
+        """ウィンドウタイトルから書籍名を取得"""
+        if not self.window:
+            return "kindle"
+        title = self.window.title
+        # "Kindle" を除去
+        name = re.sub(r'\s*-?\s*Kindle.*$', '', title, flags=re.IGNORECASE)
+        name = re.sub(r'^Kindle\s*-?\s*', '', name, flags=re.IGNORECASE)
+        # ファイル名に使えない文字を除去
+        name = re.sub(r'[\\/:*?"<>|]', '', name)
+        name = name.strip()
+        return name if name else "kindle"
 
     def get_content_region(self):
         left = max(0, self.window.left)
@@ -144,7 +158,8 @@ class KindleCapture:
             print("画像がありません")
             return None
 
-        pdf_path = self.output_dir / f"kindle_{self.session_id}.pdf"
+        book_name = self.get_book_name()
+        pdf_path = self.output_dir / f"{book_name}.pdf"
         print(f"\nPDF作成中: {pdf_path}")
 
         rgb_images = [img.convert('RGB') for img in self.images]
