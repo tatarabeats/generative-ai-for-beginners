@@ -36,7 +36,9 @@ class KindleCapture:
         self.initial_wait = 2.0   # 開始時の待機
         self.page_turn_key = 'left'  # ページ送りキー（日本語:left, 英語:right）
 
-    def setup_output_dir(self):
+    def setup_output_dir(self, book_name):
+        """出力フォルダを本の名前で作成"""
+        self.output_dir = Path("kindle_output") / book_name
         self.output_dir.mkdir(parents=True, exist_ok=True)
         (self.output_dir / "screenshots").mkdir(exist_ok=True)
 
@@ -59,15 +61,24 @@ class KindleCapture:
     def get_book_name(self):
         """ウィンドウタイトルから書籍名を取得"""
         if not self.window:
-            return "kindle"
+            return "kindle_book"
         title = self.window.title
-        # "Kindle" を除去
-        name = re.sub(r'\s*-?\s*Kindle.*$', '', title, flags=re.IGNORECASE)
-        name = re.sub(r'^Kindle\s*-?\s*', '', name, flags=re.IGNORECASE)
+        print(f"  ウィンドウタイトル: {title}")  # デバッグ用
+
+        # "Kindle" や "Amazon" を除去
+        name = title
+        name = re.sub(r'\s*[-–]\s*Kindle.*$', '', name, flags=re.IGNORECASE)
+        name = re.sub(r'\s*[-–]\s*Amazon.*$', '', name, flags=re.IGNORECASE)
+        name = re.sub(r'^Kindle\s*[-–]\s*', '', name, flags=re.IGNORECASE)
+        name = re.sub(r'^Amazon\s*[-–]\s*', '', name, flags=re.IGNORECASE)
+        name = re.sub(r'Kindle for PC', '', name, flags=re.IGNORECASE)
+        name = re.sub(r'Kindle', '', name, flags=re.IGNORECASE)
+
         # ファイル名に使えない文字を除去
         name = re.sub(r'[\\/:*?"<>|]', '', name)
-        name = name.strip()
-        return name if name else "kindle"
+        name = name.strip(' -–')
+
+        return name if name else "kindle_book"
 
     def get_content_region(self):
         left = max(0, self.window.left)
@@ -110,7 +121,9 @@ class KindleCapture:
         return True
 
     def capture_pages(self, page_count):
-        self.setup_output_dir()
+        book_name = self.get_book_name()
+        self.setup_output_dir(book_name)
+        print(f"  保存先: {self.output_dir}")
         self.images = []
         self.image_hashes = []
         same_count = 0
