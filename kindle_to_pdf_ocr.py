@@ -38,7 +38,7 @@ class KindleCapture:
 
     def setup_output_dir(self, book_name):
         """出力フォルダを本の名前で作成"""
-        self.output_dir = Path("kindle_output") / book_name
+        self.output_dir = Path(book_name)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         (self.output_dir / "screenshots").mkdir(exist_ok=True)
 
