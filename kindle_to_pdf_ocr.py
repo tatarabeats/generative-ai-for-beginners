@@ -173,11 +173,9 @@ def main():
 
     print(f"\n[OK] {capture.window.title}")
 
-    # ページ数入力
-    if len(sys.argv) > 1:
-        page_count = int(sys.argv[1])
-    else:
-        page_count = int(input("\nページ数を入力: "))
+    # ページ数（自動で最後まで）
+    page_count = 9999
+    print("\n最後のページまで自動でキャプチャします")
 
     # キャプチャ実行
     images = capture.capture_pages(page_count)
