@@ -34,6 +34,7 @@ class KindleCapture:
         # 設定
         self.page_turn_wait = 0.8  # ページ送り後の待機（短縮）
         self.initial_wait = 2.0   # 開始時の待機
+        self.page_turn_key = 'left'  # ページ送りキー（日本語:left, 英語:right）
 
     def setup_output_dir(self):
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -104,7 +105,7 @@ class KindleCapture:
         return hashlib.md5(np.array(small).tobytes()).hexdigest()
 
     def turn_page(self):
-        pyautogui.press('left')
+        pyautogui.press(self.page_turn_key)
         time.sleep(self.page_turn_wait)
         return True
 
@@ -187,6 +188,18 @@ def main():
         return
 
     print(f"\n[OK] {capture.window.title}")
+
+    # 本の種類を選択
+    print("\n本の種類を選んでください:")
+    print("  1: 日本語/縦書き（←キーで進む）")
+    print("  2: 英語/横書き（→キーで進む）")
+    choice = input("番号を入力 [1]: ").strip()
+    if choice == "2":
+        capture.page_turn_key = 'right'
+        print("→ 英語/横書きモード")
+    else:
+        capture.page_turn_key = 'left'
+        print("→ 日本語/縦書きモード")
 
     # ページ数（自動で最後まで）
     page_count = 9999
